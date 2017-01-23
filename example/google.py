@@ -22,7 +22,7 @@ google = oauth.remote_app(
     consumer_key=app.config.get('GOOGLE_ID'),
     consumer_secret=app.config.get('GOOGLE_SECRET'),
     request_token_params={
-        'scope': 'https://www.googleapis.com/auth/userinfo.email'
+        'scope': 'email'
     },
     base_url='https://www.googleapis.com/oauth2/v1/',
     request_token_url=None,
@@ -52,8 +52,8 @@ def logout():
 
 
 @app.route('/login/authorized')
-@google.authorized_handler
-def authorized(resp):
+def authorized():
+    resp = google.authorized_response()
     if resp is None:
         return 'Access denied: reason=%s error=%s' % (
             request.args['error_reason'],

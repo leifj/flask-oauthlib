@@ -1,6 +1,6 @@
 # coding: utf-8
 from datetime import datetime, timedelta
-from flask import g, render_template, request, jsonify
+from flask import g, render_template, request, jsonify, make_response
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import relationship
 from flask_oauthlib.provider import OAuth2Provider
@@ -21,7 +21,7 @@ class User(db.Model):
 
 
 class Client(db.Model):
-    #id = db.Column(db.Integer, primary_key=True)
+    # id = db.Column(db.Integer, primary_key=True)
     # human readable name
     name = db.Column(db.String(40))
     client_id = db.Column(db.String(40), primary_key=True)
@@ -115,6 +115,11 @@ class Token(db.Model):
         if self.scope:
             return self.scope.split()
         return []
+
+    def delete(self):
+        db.session.delete(self)
+        db.session.commit()
+        return self
 
 
 def current_user():
@@ -223,18 +228,26 @@ def prepare_app(app):
         expires=datetime.utcnow() + timedelta(seconds=100)
     )
 
+    access_token = Token(
+        user_id=1, client_id='dev', access_token='expired', expires_in=0
+    )
+
     try:
         db.session.add(client1)
         db.session.add(client2)
         db.session.add(user)
         db.session.add(temp_grant)
+        db.session.add(access_token)
         db.session.commit()
     except:
         db.session.rollback()
     return app
 
 
-def create_server(app, oauth):
+def create_server(app, oauth=None):
+    if not oauth:
+        oauth = default_provider(app)
+
     app = prepare_app(app)
 
     @app.before_request
@@ -254,13 +267,25 @@ def create_server(app, oauth):
             # render a page for user to confirm the authorization
             return render_template('confirm.html')
 
+        if request.method == 'HEAD':
+            # if HEAD is supported properly, request parameters like
+            # client_id should be validated the same way as for 'GET'
+            response = make_response('', 200)
+            response.headers['X-Client-ID'] = kwargs.get('client_id')
+            return response
+
         confirm = request.form.get('confirm', 'no')
         return confirm == 'yes'
 
-    @app.route('/oauth/token')
+    @app.route('/oauth/token', methods=['POST', 'GET'])
     @oauth.token_handler
     def access_token():
         return {}
+
+    @app.route('/oauth/revoke', methods=['POST'])
+    @oauth.revoke_handler
+    def revoke_token():
+        pass
 
     @app.route('/api/email')
     @oauth.require_oauth('email')
@@ -284,6 +309,10 @@ def create_server(app, oauth):
     @oauth.require_oauth()
     def method_api():
         return jsonify(method=request.method)
+
+    @oauth.invalid_response
+    def require_oauth_invalid(req):
+        return jsonify(message=req.error_message), 401
 
     return app
 

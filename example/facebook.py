@@ -19,6 +19,7 @@ facebook = oauth.remote_app(
     base_url='https://graph.facebook.com',
     request_token_url=None,
     access_token_url='/oauth/access_token',
+    access_token_method='GET',
     authorize_url='https://www.facebook.com/dialog/oauth'
 )
 
@@ -39,8 +40,8 @@ def login():
 
 
 @app.route('/login/authorized')
-@facebook.authorized_handler
-def facebook_authorized(resp):
+def facebook_authorized():
+    resp = facebook.authorized_response()
     if resp is None:
         return 'Access denied: reason=%s error=%s' % (
             request.args['error_reason'],

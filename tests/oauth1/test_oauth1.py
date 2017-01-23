@@ -95,6 +95,7 @@ class TestWebAuth(OAuthSuite):
         })
         assert 'error' in rv.location
 
+
 auth_header = (
     u'OAuth realm="%(realm)s",'
     u'oauth_nonce="97392753692390970531372987366",'

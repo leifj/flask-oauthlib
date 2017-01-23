@@ -33,6 +33,7 @@ setup(
         "flask_oauthlib",
         "flask_oauthlib.provider",
         "flask_oauthlib.contrib",
+        "flask_oauthlib.contrib.client",
     ],
     description="OAuthlib for Flask",
     zip_safe=False,
@@ -42,12 +43,13 @@ setup(
     license='BSD',
     install_requires=[
         'Flask',
-        'oauthlib==0.6.1',
+        'oauthlib>=1.1.2',
+        'requests-oauthlib>=0.6.2',
     ],
     tests_require=['nose', 'Flask-SQLAlchemy', 'mock'],
     test_suite='nose.collector',
     classifiers=[
-        'Development Status :: 3 - Alpha',
+        'Development Status :: 4 - Beta',
         'Environment :: Web Environment',
         'Intended Audience :: Developers',
         'License :: OSI Approved',

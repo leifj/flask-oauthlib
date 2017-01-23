@@ -12,7 +12,7 @@ def create_client(app):
         request_token_params={'scope': 'email'},
         base_url='http://127.0.0.1:5000/api/',
         request_token_url=None,
-        access_token_method='GET',
+        access_token_method='POST',
         access_token_url='http://127.0.0.1:5000/oauth/token',
         authorize_url='http://127.0.0.1:5000/oauth/authorize'
     )
@@ -34,8 +34,8 @@ def create_client(app):
         return redirect(url_for('index'))
 
     @app.route('/authorized')
-    @remote.authorized_handler
-    def authorized(resp):
+    def authorized():
+        resp = remote.authorized_response()
         if resp is None:
             return 'Access denied: error=%s' % (
                 request.args['error']
@@ -48,7 +48,7 @@ def create_client(app):
     @app.route('/client')
     def client_method():
         ret = remote.get("client")
-        if ret.status not in (200,201):
+        if ret.status not in (200, 201):
             return abort(ret.status)
         return ret.raw_data
 
@@ -56,7 +56,7 @@ def create_client(app):
     def address():
         ret = remote.get('address/hangzhou')
         if ret.status not in (200, 201):
-            return abort(ret.status)
+            return ret.raw_data, ret.status
         return ret.raw_data
 
     @app.route('/method/<name>')
@@ -74,7 +74,7 @@ def create_client(app):
 
 if __name__ == '__main__':
     import os
-    os.environ['DEBUG'] = 'true'
+    os.environ['OAUTHLIB_INSECURE_TRANSPORT'] = 'true'
     # DEBUG=1 python oauth2_client.py
     app = Flask(__name__)
     app.debug = True
